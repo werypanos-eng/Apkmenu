@@ -32,16 +32,25 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          # Ищем папку с проектом (где лежит settings.gradle)
+          # Ищем папку с проектом
           PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           if [ -z "$PROJECT_DIR" ]; then
             PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           fi
-          
           cd "$PROJECT_DIR"
-          echo "Сборка в папке: $(pwd)"
           
-          # ВЫЗЫВАЕМ ГЛОБАЛЬНЫЙ GRADLE, а не ./gradlew
+          # УДАЛЯЕМ сломанные настройки LGL и создаем свои
+          rm -rf gradle/wrapper
+          mkdir -p gradle/wrapper
+          cat <<EOF > gradle/wrapper/gradle-wrapper.properties
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          
+          # Запускаем глобальный gradle, игнорируя сломанный ./gradlew
           gradle assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
