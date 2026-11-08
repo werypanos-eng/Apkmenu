@@ -25,16 +25,15 @@ jobs:
           ndk-version: r25b
           add-to-path: true
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
+      # ПРИНУДИТЕЛЬНО СТАВИМ GRADLE 8.5 (самый надежный способ)
+      - name: Setup Gradle 8.5
+        uses: gradle/actions/setup-gradle@v3
         with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          gradle-version: 8.5
 
       - name: Build with Gradle
         run: |
+          # Ищем папку с проектом
           PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           if [ -z "$PROJECT_DIR" ]; then
             echo "Ошибка: build.gradle не найден!"
@@ -42,11 +41,9 @@ jobs:
           fi
           cd "$PROJECT_DIR"
           
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
-          
-          # Добавляем флаг --no-daemon для стабильности
-          ./gradlew assembleDebug --no-daemon
+          # Используем глобальный gradle 8.5, который мы только что установили, 
+          # игнорируя сломанный gradlew внутри проекта
+          gradle assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
