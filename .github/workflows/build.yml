@@ -25,26 +25,22 @@ jobs:
           ndk-version: r25b
           add-to-path: true
 
-      - name: Setup Gradle 8.5
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 8.5
-
-      - name: Build with Gradle
+      - name: Fix Gradle Version and Build
         run: |
-          # Ищем корень проекта по файлу settings.gradle
-          PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
+          # Ищем ВСЕ файлы настроек gradle и меняем в них битую версию 8.13 на 8.5
+          find . -name "gradle-wrapper.properties" -exec sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.5-bin.zip|' {} +
           
+          # Ищем папку с проектом (где лежит settings.gradle)
+          PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           if [ -z "$PROJECT_DIR" ]; then
-            echo "Ошибка: settings.gradle не найден, ищем build.gradle..."
-            PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 2 -type f | head -n 1 | xargs dirname)
+            PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           fi
           
           cd "$PROJECT_DIR"
           echo "Сборка в папке: $(pwd)"
           
-          # Вызываем глобальный gradle напрямую (8.5)
-          gradle assembleDebug --no-daemon
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
