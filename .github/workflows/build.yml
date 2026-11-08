@@ -27,7 +27,6 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          # Ищем папку, где лежит gradlew
           GRADLEW_PATH=$(find . -name "gradlew" -type f | head -n 1)
           if [ -z "$GRADLEW_PATH" ]; then
             echo "gradlew не найден!"
@@ -36,15 +35,13 @@ jobs:
           PROJECT_DIR=$(dirname "$GRADLEW_PATH")
           cd "$PROJECT_DIR"
           
-          # Делаем файл исполняемым
           chmod +x gradlew
           
-          # Если файл wrapper.jar отсутствует (как в прошлой ошибке), создаем его
+          # Принудительно ставим Gradle 8.7, который совместим с шаблоном
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            gradle wrapper
+            gradle wrapper --gradle-version 8.7
           fi
           
-          # Запускаем сборку
           ./gradlew assembleDebug
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
