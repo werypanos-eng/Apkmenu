@@ -12,10 +12,10 @@ jobs:
           find . -maxdepth 1 -name "*.zip" -exec unzip {} \;
           ls -la
 
-      - name: Set up JDK 17
+      - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
 
       - name: Setup Android NDK
@@ -25,24 +25,23 @@ jobs:
           ndk-version: r25b
           add-to-path: true
 
-      - name: Setup Gradle 8.5
+      - name: Setup Gradle 7.5
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.5
+          gradle-version: 7.5
 
       - name: Build with Gradle
         run: |
-          # Ищем корень проекта
           PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           cd "$PROJECT_DIR"
           echo "Сборка в папке: $(pwd)"
           
-          # Удаляем старые сломанные настройки
+          # Удаляем сломанные настройки
           rm -rf gradle/wrapper
           mkdir -p gradle/wrapper
           
-          # Генерируем новые настройки для Gradle 8.5
-          gradle wrapper --gradle-version 8.5
+          # Генерируем настройки для 7.5
+          gradle wrapper --gradle-version 7.5
           
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
