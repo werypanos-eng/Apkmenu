@@ -25,26 +25,26 @@ jobs:
           ndk-version: r25b
           add-to-path: true
 
+      - name: Setup Gradle 8.5
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+
       - name: Build with Gradle
         run: |
-          # Ищем папку с проектом
-          PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
+          # Ищем корень проекта по файлу settings.gradle
+          PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
+          
           if [ -z "$PROJECT_DIR" ]; then
-            echo "Ошибка: build.gradle не найден!"
-            exit 1
+            echo "Ошибка: settings.gradle не найден, ищем build.gradle..."
+            PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 2 -type f | head -n 1 | xargs dirname)
           fi
+          
           cd "$PROJECT_DIR"
+          echo "Сборка в папке: $(pwd)"
           
-          # ПОЛНОСТЬЮ ПЕРЕЗАПИСЫВАЕМ файл конфигурации Gradle на версию 8.5
-          mkdir -p gradle/wrapper
-          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.5-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          # Вызываем глобальный gradle напрямую (8.5)
+          gradle assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
