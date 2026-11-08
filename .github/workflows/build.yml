@@ -32,21 +32,20 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          # Ищем папку с проектом (где лежит settings.gradle)
+          # Ищем корень проекта
           PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
-          if [ -z "$PROJECT_DIR" ]; then
-            PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
-          fi
-          
           cd "$PROJECT_DIR"
           echo "Сборка в папке: $(pwd)"
           
-          # УДАЛЯЕМ встроенный сломанный gradlew и его конфиги
-          rm -f gradlew gradlew.bat
-          rm -rf gradle
+          # Удаляем старые сломанные настройки
+          rm -rf gradle/wrapper
+          mkdir -p gradle/wrapper
           
-          # Запускаем глобальный Gradle 8.5 (он уже установлен в системе)
-          gradle assembleDebug --no-daemon
+          # Генерируем новые настройки для Gradle 8.5
+          gradle wrapper --gradle-version 8.5
+          
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
