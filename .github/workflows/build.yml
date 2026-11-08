@@ -25,9 +25,16 @@ jobs:
           ndk-version: r25b
           add-to-path: true
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Build with Gradle
         run: |
-          # Ищем папку с проектом (где лежит build.gradle)
           PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
           if [ -z "$PROJECT_DIR" ]; then
             echo "Ошибка: build.gradle не найден!"
@@ -35,12 +42,11 @@ jobs:
           fi
           cd "$PROJECT_DIR"
           
-          # Генерируем правильный Gradle Wrapper (8.5), так как в архиве его нет
           gradle wrapper --gradle-version 8.5
-          
-          # Теперь запускаем сборку через сгенерированный файл
           chmod +x gradlew
-          ./gradlew assembleDebug
+          
+          # Добавляем флаг --no-daemon для стабильности
+          ./gradlew assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
