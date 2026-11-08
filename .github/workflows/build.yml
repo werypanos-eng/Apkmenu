@@ -30,29 +30,26 @@ jobs:
         with:
           gradle-version: 8.2
 
-      - name: Patch and Build
+      - name: Build with Gradle
         run: |
-          # 1. Ищем корень проекта
-          PROJECT_DIR=$(find . -name "settings.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
+          # Ищем папку app (она есть в любом проекте)
+          APP_DIR=$(find . -type d -name "app" | head -n 1)
+          if [ -z "$APP_DIR" ]; then
+            echo "Ошибка: Папка app не найдена!"
+            ls -la
+            exit 1
+          fi
+          
+          # Корень проекта — это папка на уровень выше app
+          PROJECT_DIR=$(dirname "$APP_DIR")
           cd "$PROJECT_DIR"
           echo "Сборка в папке: $(pwd)"
-
-          # 2. Жестко ставим плагин Android (AGP 8.1.4)
-          sed -i 's|classpath .*com.android.tools.build:gradle:.*|classpath "com.android.tools.build:gradle:8.1.4"|' build.gradle
-
-          # 3. Добавляем namespace в app/build.gradle (он обязателен для AGP 8+)
-          if [ -f "app/build.gradle" ]; then
-            if ! grep -q "namespace " app/build.gradle; then
-              sed -i 's/android {/android {\n    namespace "com.lgl.modmenu"/' app/build.gradle
-            fi
-          fi
-
-          # 4. Перезаписываем битый wrapper на 8.2
+          
+          # Удаляем старый wrapper и ставим свой
           rm -rf gradle/wrapper
           mkdir -p gradle/wrapper
           echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.2-bin.zip" > gradle/wrapper/gradle-wrapper.properties
-
-          # 5. Генерируем рабочий gradlew и собираем
+          
           gradle wrapper --gradle-version 8.2
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
