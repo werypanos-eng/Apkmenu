@@ -25,23 +25,22 @@ jobs:
           ndk-version: r25b
           add-to-path: true
 
-      - name: Force Gradle 8.5 and Build
+      - name: Build with Gradle
         run: |
-          GRADLEW_PATH=$(find . -name "gradlew" -type f | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "gradlew не найден!"
+          # Ищем папку с проектом (где лежит build.gradle)
+          PROJECT_DIR=$(find . -name "build.gradle" -maxdepth 3 -type f | head -n 1 | xargs dirname)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Ошибка: build.gradle не найден!"
             exit 1
           fi
-          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
           cd "$PROJECT_DIR"
           
-          # Принудительно меняем версию Gradle в конфиге на 8.5
-          if [ -f "gradle/wrapper/gradle-wrapper.properties" ]; then
-            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.5-bin.zip|' gradle/wrapper/gradle-wrapper.properties
-          fi
+          # Генерируем правильный Gradle Wrapper (8.5), так как в архиве его нет
+          gradle wrapper --gradle-version 8.5
           
+          # Теперь запускаем сборку через сгенерированный файл
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
